@@ -31,10 +31,12 @@ function doGet(e) {
 }
 
 // ── 讀取 ──────────────────────────────────────────────────────
+// 表頭格式：「【排班】2026年3月」— 前綴避免 Google Sheets 自動轉為日期
+// 同時相容舊格式「2026年3月」（透過 getDisplayValues 讀取顯示值）
 function handleReadData() {
   const ss    = SpreadsheetApp.openById(SPREADSHEET_ID);
   const sheet = getOrCreateSheet(ss);
-  const data  = sheet.getDataRange().getValues();
+  const data  = sheet.getDataRange().getDisplayValues();
 
   const result = [];
   let curBlock = null;
@@ -43,7 +45,8 @@ function handleReadData() {
     const cell = String(row[0] || '').trim();
     if (!cell) return;
 
-    const secMatch = cell.match(/^(\d+)年(\d+)月$/);
+    // 支援新格式「【排班】2026年3月」與舊格式「2026年3月」
+    const secMatch = cell.match(/^(?:【排班】)?(\d+)年(\d+)月$/);
     if (secMatch) {
       curBlock = {
         year:  parseInt(secMatch[1]),
@@ -81,7 +84,7 @@ function handleWriteData(e) {
     const days = new Date(year, month + 1, 0).getDate();
 
     if (bi > 0) output.push(Array(days + 1).fill(''));
-    output.push([`${year}年${month + 1}月`, ...Array(days).fill('')]);
+    output.push([`【排班】${year}年${month + 1}月`, ...Array(days).fill('')]);
     output.push(['護理師', ...Array.from({ length: days }, (_, i) => i + 1)]);
     Object.entries(nurses).forEach(([name, shifts]) => {
       output.push([name, ...shifts]);
@@ -114,7 +117,7 @@ function formatSheet(sheet, output) {
   output.forEach((row, i) => {
     const rowNum = i + 1;
     const cell0  = String(row[0] || '');
-    if (cell0.match(/^\d+年\d+月$/)) {
+    if (cell0.match(/^(?:【排班】)?\d+年\d+月$/)) {
       sheet.getRange(rowNum, 1, 1, row.length)
         .setBackground('#C0392B').setFontColor('#FFFFFF').setFontWeight('bold');
     } else if (cell0 === '護理師') {

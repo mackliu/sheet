@@ -665,7 +665,7 @@ const SHIFT_LABELS   = { D:'白', E:'小', N:'大', O:'休', AL:'假' };
 const LABEL_TO_SHIFT = { '白':'D', '小':'E', '大':'N', '休':'O', '假':'AL' };
 
 // ── Google Apps Script Web App 網址（部署後填入，會記憶到 localStorage）
-let GAS_URL = localStorage.getItem('gas_url') || 'https://script.google.com/macros/s/AKfycbxtbwMtjsdtdcWCkgw8Qo1EAdpbIIYwkqvmMw1ksVayo36B962oC063jvFQxZaWUmiRdw/exec';
+let GAS_URL = localStorage.getItem('gas_url') || '';
 
 let currentYear   = new Date().getFullYear();
 let currentMonth  = new Date().getMonth();
@@ -804,7 +804,6 @@ async function saveToSheets() {
   setSaveIndicator(true);
   try {
     const payload = buildPayload();
-    // 注意：不要先 encodeURIComponent，jsonp() 內部會統一處理
     const json = await jsonp({ action: 'write', data: JSON.stringify(payload) });
     if (json.ok) {
       setSaveIndicator(false);
