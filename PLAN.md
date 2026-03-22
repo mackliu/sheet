@@ -18,6 +18,40 @@
 - 可部署為 Web App，提供 API 端點
 - 前端可以是純靜態 HTML，部署在任何地方（GitHub Pages、本地開啟皆可）
 
+### 前後端通訊方式：隱藏 iframe + 表單提交
+
+為了讓使用者可以**直接雙擊 HTML 檔案開啟使用**（`file://` 協定），不依賴任何 Web Server，
+採用**隱藏 iframe + form submit** 的方式與 Google Apps Script 通訊，繞過 CORS 限制。
+
+**原理：**
+1. 頁面中建立一個隱藏的 `<iframe name="hidden-iframe">`
+2. 表單的 `target` 指向該 iframe：`<form target="hidden-iframe" action="Apps Script URL">`
+3. 表單提交後，Apps Script 的回應會載入到隱藏 iframe 中，不會導致頁面跳轉
+4. Apps Script 回傳一段包含 `postMessage` 的 HTML，透過 `window.parent.postMessage()` 將結果傳回主頁面
+5. 主頁面監聽 `message` 事件，接收處理結果（成功/失敗）
+
+**寫入資料（POST）流程：**
+```
+使用者填表 → form submit 到 iframe → Apps Script doPost() 寫入 Sheet
+→ 回傳含 postMessage 的 HTML → 主頁面收到成功通知
+```
+
+**讀取資料（GET）流程：**
+```
+JavaScript 動態建立 <script> 標籤（JSONP 方式）
+→ Apps Script doGet() 讀取 Sheet → 回傳 callback(data)
+→ 主頁面 callback 函式接收資料並渲染
+```
+
+> **備案：Web Server 方式**
+> 如果 iframe 方式遇到瀏覽器安全限制，可改用本地 Web Server + fetch 方式：
+> - **Python**：`python -m http.server 8080`，然後開啟 `http://localhost:8080`
+> - **Node.js**：`npx serve`
+> - **VS Code**：安裝 Live Server 插件，右鍵 → Open with Live Server
+>
+> 使用 Web Server 後，前端改用 `fetch()` 直接呼叫 Apps Script URL 即可，
+> 不需要 iframe / JSONP 的繞道方式。
+
 ---
 
 ## 前提條件
@@ -65,8 +99,8 @@
 
 ### 步驟 2：撰寫 Google Apps Script
 建立後端 API，處理以下功能：
-- `doPost(e)` — 接收表單資料，寫入排班表
-- `doGet(e)` — 讀取排班資料 / 人員名單，回傳 JSON
+- `doPost(e)` — 接收表單資料，寫入排班表，回傳含 `postMessage` 的 HTML（供 iframe 回傳結果）
+- `doGet(e)` — 讀取排班資料 / 人員名單，支援 JSONP 回傳（`callback` 參數）
 - 資料驗證（日期格式、時間格式、必填欄位）
 
 ### 步驟 3：部署 Apps Script 為 Web App
@@ -84,8 +118,9 @@
   3. **人員管理** — 新增/檢視人員名單
 
 ### 步驟 5：串接前後端
-- 前端透過 `fetch()` 呼叫 Apps Script Web App URL
-- 處理 CORS（Apps Script Web App 預設支援跨域）
+- **寫入**：前端透過隱藏 iframe + form submit 送出資料，監聽 `postMessage` 接收回應
+- **讀取**：前端透過動態 `<script>` 標籤（JSONP）載入資料
+- 不依賴 `fetch()`，完全繞過 CORS 限制，支援 `file://` 協定直接開啟
 
 ### 步驟 6：測試與調整
 - 測試表單送出是否正確寫入 Sheet
@@ -94,32 +129,15 @@
 
 ---
 
-## 待確認事項
+## 確認事項（測試階段預設值）
 
-請檢視以下問題，確認後再開始實作：
-
-1. **班別設定**：預設提供「早班 / 中班 / 晚班」，是否需要自訂班別？各班別的預設時間為何？
-   - 例如：早班 08:00-16:00、中班 16:00-24:00、晚班 00:00-08:00
-
-2. **人員數量**：大約有多少人需要排班？（影響 UI 設計）
-
-3. **排班週期**：以「日」為單位排班，還是需要「週」或「月」的批次排班功能？
-
-4. **權限控制**：是否需要簡易的密碼保護？（防止任何人都能修改排班）
-   - 如果不需要，任何知道網址的人都可以操作
-
-5. **前端部署方式**：
-   - A) 純本地 HTML 檔案（雙擊開啟即可用）
-   - B) 部署到 GitHub Pages（有固定網址）
-   - C) 其他偏好？
-
-6. **語言**：介面使用繁體中文？
-
-7. **額外功能**：是否需要以下功能？
-   - [ ] 匯出排班表為 PDF
-   - [ ] 排班衝突檢查（同一人同時段重複排班）
-   - [ ] 班表模板（每週固定班表快速套用）
-   - [ ] 換班申請
+1. **班別設定**：早班 08:00-16:00、中班 16:00-24:00、晚班 00:00-08:00
+2. **人員數量**：預設 5-10 人規模
+3. **排班週期**：以「日」為單位，逐筆排班
+4. **權限控制**：暫不設定，任何人皆可操作
+5. **前端部署方式**：純本地 HTML 檔案（雙擊開啟），使用 iframe + JSONP
+6. **語言**：繁體中文
+7. **額外功能**：暫不實作，先完成核心功能
 
 ---
 
@@ -130,7 +148,8 @@
 | 前端 | HTML5 + CSS3 + Vanilla JavaScript |
 | 後端 | Google Apps Script |
 | 資料庫 | Google Sheet |
-| 部署 | 靜態檔案（本地或 GitHub Pages） |
+| 前後端通訊 | 隱藏 iframe + form submit（寫入）、JSONP（讀取） |
+| 部署 | 純靜態 HTML 檔案，雙擊即可使用（備案：本地 Web Server） |
 
 ## 限制與注意事項
 
