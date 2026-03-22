@@ -1,0 +1,1167 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>護理師排班管理系統</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --rose: #C0392B;
+    --rose-light: #E8736A;
+    --rose-pale: #FDECEA;
+    --peach: #F0956A;
+    --peach-light: #FAD4BB;
+    --peach-pale: #FEF5EF;
+    --warm-cream: #FBF7F2;
+    --warm-tan: #E8DDD0;
+    --warm-brown: #8B6F5E;
+    --text-dark: #3D2B1F;
+    --text-mid: #6B4F3F;
+    --text-light: #A07A68;
+    --white: #FFFFFF;
+    --shadow: rgba(139,111,94,0.15);
+    --shift-day: #FFD580;
+    --shift-day-text: #7A5C00;
+    --shift-eve: #FFAB76;
+    --shift-eve-text: #7A3A00;
+    --shift-night: #8BA5D9;
+    --shift-night-text: #1A2E5A;
+    --shift-off: #D8D0C8;
+    --shift-off-text: #6B5A52;
+    --shift-al: #A8D8A8;
+    --shift-al-text: #1A4D1A;
+  }
+
+  body {
+    font-family: 'Noto Sans TC', sans-serif;
+    background: var(--warm-cream);
+    color: var(--text-dark);
+    min-height: 100vh;
+    font-size: 14px;
+  }
+
+  .app-header {
+    background: linear-gradient(135deg, #C0392B 0%, #E87A6A 60%, #F0A080 100%);
+    color: white;
+    padding: 16px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: 0 2px 12px rgba(192,57,43,0.25);
+  }
+
+  .app-header .logo-area {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .app-header .logo-icon {
+    width: 40px; height: 40px;
+    background: rgba(255,255,255,0.2);
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px;
+  }
+
+  .app-header h1 {
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: 1px;
+  }
+
+  .app-header .subtitle {
+    font-size: 12px;
+    opacity: 0.85;
+    margin-top: 2px;
+  }
+
+  .header-info {
+    font-size: 13px;
+    opacity: 0.9;
+    text-align: right;
+  }
+
+  .main-layout {
+    display: grid;
+    grid-template-columns: 220px 1fr;
+    gap: 0;
+    min-height: calc(100vh - 72px);
+  }
+
+  .sidebar {
+    background: white;
+    border-right: 1.5px solid var(--warm-tan);
+    padding: 16px 0;
+    overflow-y: auto;
+  }
+
+  .sidebar-section {
+    padding: 0 16px;
+    margin-bottom: 20px;
+  }
+
+  .sidebar-title {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text-light);
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--warm-tan);
+  }
+
+  .nav-btn {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 9px 12px;
+    border: none;
+    background: transparent;
+    border-radius: 8px;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 13.5px;
+    color: var(--text-mid);
+    transition: all 0.15s;
+    text-align: left;
+    margin-bottom: 2px;
+  }
+
+  .nav-btn:hover { background: var(--peach-pale); color: var(--rose); }
+  .nav-btn.active { background: var(--rose-pale); color: var(--rose); font-weight: 500; }
+  .nav-btn .nav-icon { font-size: 16px; width: 20px; text-align: center; }
+
+  .nurse-list-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 10px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.15s;
+    margin-bottom: 2px;
+  }
+  .nurse-list-item:hover { background: var(--warm-cream); }
+
+  .nurse-avatar {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px;
+    font-weight: 600;
+    color: white;
+    flex-shrink: 0;
+  }
+
+  .nurse-name { font-size: 13px; color: var(--text-dark); }
+  .nurse-role { font-size: 11px; color: var(--text-light); }
+
+  .content-area {
+    padding: 20px 24px;
+    overflow-y: auto;
+  }
+
+  .page { display: none; }
+  .page.active { display: block; }
+
+  .page-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+  }
+
+  .page-title {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--text-dark);
+  }
+
+  .page-subtitle {
+    font-size: 13px;
+    color: var(--text-light);
+    margin-top: 3px;
+  }
+
+  .btn {
+    padding: 8px 18px;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 500;
+    transition: all 0.15s;
+  }
+
+  .btn-primary { background: var(--rose); color: white; }
+  .btn-primary:hover { background: #A93226; }
+  .btn-outline { background: white; color: var(--text-mid); border: 1.5px solid var(--warm-tan); }
+  .btn-outline:hover { border-color: var(--peach); color: var(--rose); }
+  .btn-sm { padding: 5px 12px; font-size: 12px; }
+
+  .month-nav {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 18px;
+    flex-wrap: wrap;
+  }
+
+  .month-nav button {
+    width: 32px; height: 32px;
+    border-radius: 8px;
+    border: 1.5px solid var(--warm-tan);
+    background: white;
+    cursor: pointer;
+    font-size: 16px;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--text-mid);
+    transition: all 0.15s;
+  }
+
+  .month-nav button:hover { border-color: var(--peach); color: var(--rose); }
+  .month-nav .month-label { font-size: 16px; font-weight: 600; color: var(--text-dark); min-width: 120px; text-align: center; }
+
+  .schedule-grid-wrapper {
+    background: white;
+    border-radius: 12px;
+    border: 1.5px solid var(--warm-tan);
+    overflow: hidden;
+    box-shadow: 0 2px 12px var(--shadow);
+  }
+
+  .schedule-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  .schedule-table th {
+    background: var(--rose-pale);
+    padding: 10px 6px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--rose);
+    text-align: center;
+    border-bottom: 1.5px solid var(--warm-tan);
+    border-right: 1px solid var(--warm-tan);
+    white-space: nowrap;
+  }
+
+  .schedule-table th.name-col {
+    background: #F9EDE9;
+    text-align: left;
+    padding-left: 14px;
+    min-width: 90px;
+    position: sticky;
+    left: 0;
+    z-index: 1;
+    border-right: 2px solid var(--warm-tan);
+  }
+
+  .schedule-table td {
+    padding: 0;
+    border-right: 1px solid var(--warm-tan);
+    border-bottom: 1px solid var(--warm-tan);
+    text-align: center;
+    vertical-align: middle;
+    cursor: pointer;
+  }
+
+  .schedule-table td.nurse-name-cell {
+    padding: 10px 8px 10px 14px;
+    text-align: left;
+    background: white;
+    cursor: default;
+    position: sticky;
+    left: 0;
+    z-index: 1;
+    border-right: 2px solid var(--warm-tan);
+  }
+
+  .schedule-table td:hover:not(.nurse-name-cell) { opacity: 0.8; }
+
+  .shift-cell {
+    display: inline-block;
+    padding: 3px 6px;
+    border-radius: 5px;
+    font-size: 11px;
+    font-weight: 600;
+    min-width: 28px;
+    margin: 4px 2px;
+  }
+
+  .shift-D { background: var(--shift-day); color: var(--shift-day-text); }
+  .shift-E { background: var(--shift-eve); color: var(--shift-eve-text); }
+  .shift-N { background: var(--shift-night); color: var(--shift-night-text); }
+  .shift-O { background: var(--shift-off); color: var(--shift-off-text); }
+  .shift-AL { background: var(--shift-al); color: var(--shift-al-text); font-size: 10px; }
+
+  .today-col { background: rgba(192,57,43,0.04); }
+
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 14px;
+    margin-bottom: 24px;
+  }
+
+  .stat-card {
+    background: white;
+    border-radius: 10px;
+    padding: 16px;
+    border: 1.5px solid var(--warm-tan);
+    box-shadow: 0 2px 8px var(--shadow);
+  }
+
+  .stat-label { font-size: 12px; color: var(--text-light); margin-bottom: 6px; }
+  .stat-value { font-size: 26px; font-weight: 700; color: var(--text-dark); line-height: 1; }
+  .stat-sub { font-size: 11px; color: var(--text-light); margin-top: 4px; }
+
+  .stat-card.rose { border-top: 3px solid var(--rose); }
+  .stat-card.peach { border-top: 3px solid var(--peach); }
+  .stat-card.gold { border-top: 3px solid #F0C040; }
+  .stat-card.teal { border-top: 3px solid #5DACA8; }
+
+  .legend {
+    display: flex;
+    gap: 14px;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-bottom: 14px;
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--text-mid);
+  }
+
+  .legend-dot {
+    width: 20px; height: 16px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+  }
+
+  .request-list { display: flex; flex-direction: column; gap: 10px; }
+
+  .request-card {
+    background: white;
+    border-radius: 10px;
+    border: 1.5px solid var(--warm-tan);
+    padding: 14px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: 0 1px 6px var(--shadow);
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .request-card .req-left { display: flex; align-items: center; gap: 12px; }
+  .request-card .req-name { font-weight: 500; font-size: 14px; }
+  .request-card .req-detail { font-size: 12px; color: var(--text-light); margin-top: 2px; }
+
+  .badge {
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+  }
+
+  .badge-pending { background: #FFF3E0; color: #E65100; }
+  .badge-approved { background: var(--shift-al); color: var(--shift-al-text); }
+  .badge-denied { background: var(--rose-pale); color: var(--rose); }
+
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(61,43,31,0.45);
+    z-index: 100;
+    align-items: center;
+    justify-content: center;
+  }
+  .modal-overlay.open { display: flex; }
+
+  .modal {
+    background: white;
+    border-radius: 14px;
+    padding: 24px;
+    width: 360px;
+    max-width: 90vw;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+  }
+
+  .modal-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text-dark);
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--warm-tan);
+  }
+
+  .form-group { margin-bottom: 14px; }
+  .form-label { font-size: 12px; font-weight: 600; color: var(--text-mid); margin-bottom: 6px; display: block; }
+
+  .form-select, .form-input {
+    width: 100%;
+    padding: 8px 12px;
+    border-radius: 8px;
+    border: 1.5px solid var(--warm-tan);
+    font-family: inherit;
+    font-size: 13px;
+    color: var(--text-dark);
+    background: var(--warm-cream);
+    outline: none;
+    transition: border-color 0.15s;
+  }
+
+  .form-select:focus, .form-input:focus { border-color: var(--rose-light); }
+
+  .shift-selector {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 6px;
+    margin-top: 6px;
+  }
+
+  .shift-opt {
+    padding: 7px 4px;
+    border-radius: 7px;
+    border: 2px solid transparent;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 600;
+    text-align: center;
+    transition: all 0.15s;
+  }
+
+  .shift-opt.D { background: var(--shift-day); color: var(--shift-day-text); }
+  .shift-opt.E { background: var(--shift-eve); color: var(--shift-eve-text); }
+  .shift-opt.N { background: var(--shift-night); color: var(--shift-night-text); }
+  .shift-opt.O { background: var(--shift-off); color: var(--shift-off-text); }
+  .shift-opt.AL { background: var(--shift-al); color: var(--shift-al-text); }
+  .shift-opt.selected { border-color: var(--rose); box-shadow: 0 0 0 2px rgba(192,57,43,0.2); }
+
+  .modal-actions { display: flex; gap: 10px; margin-top: 20px; justify-content: flex-end; }
+
+  .scrollable-x { overflow-x: auto; }
+  .nurse-name-inner { display: flex; align-items: center; gap: 8px; }
+
+  .summary-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 6px;
+  }
+
+  .summary-table th {
+    background: var(--rose-pale);
+    padding: 8px 12px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--rose);
+    text-align: left;
+    border-bottom: 1.5px solid var(--warm-tan);
+  }
+
+  .summary-table td {
+    padding: 9px 12px;
+    font-size: 13px;
+    border-bottom: 1px solid var(--warm-tan);
+    color: var(--text-dark);
+  }
+
+  .summary-table tr:nth-child(even) td { background: var(--warm-cream); }
+
+  @media (max-width: 700px) {
+    .main-layout { grid-template-columns: 1fr; }
+    .sidebar { display: none; }
+    .stats-row { grid-template-columns: repeat(2,1fr); }
+  }
+</style>
+</head>
+<body>
+
+<header class="app-header">
+  <div class="logo-area">
+    <div class="logo-icon">🏥</div>
+    <div>
+      <h1>護理排班管理系統</h1>
+      <div class="subtitle">Nurse Scheduling Management</div>
+    </div>
+  </div>
+  <div style="display:flex;align-items:center;gap:14px;">
+    <div class="header-info">
+      <div id="current-datetime"></div>
+      <div style="margin-top:3px;">第三外科病房 · 護理長：王主任</div>
+    </div>
+    <button onclick="openSettings()" title="Google Sheets 連線設定"
+      style="width:38px;height:38px;border-radius:10px;border:2px solid rgba(255,255,255,0.4);
+      background:rgba(255,255,255,0.15);color:white;cursor:pointer;font-size:18px;
+      display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background 0.15s;"
+      onmouseover="this.style.background='rgba(255,255,255,0.28)'"
+      onmouseout="this.style.background='rgba(255,255,255,0.15)'">⚙</button>
+  </div>
+</header>
+
+<div class="main-layout">
+  <aside class="sidebar">
+    <div class="sidebar-section">
+      <div class="sidebar-title">主選單</div>
+      <button class="nav-btn active" onclick="showPage('schedule')" id="nav-schedule">
+        <span class="nav-icon">📅</span> 月份排班表
+      </button>
+      <button class="nav-btn" onclick="showPage('requests')" id="nav-requests">
+        <span class="nav-icon">📋</span> 換班申請
+        <span style="margin-left:auto;background:#E8736A;color:white;border-radius:10px;padding:1px 7px;font-size:11px;">3</span>
+      </button>
+      <button class="nav-btn" onclick="showPage('summary')" id="nav-summary">
+        <span class="nav-icon">📊</span> 班次統計
+      </button>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-title">護理師名單</div>
+      <div id="nurse-list"></div>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-title">快速操作</div>
+      <button class="nav-btn" onclick="openModal()">
+        <span class="nav-icon">✏️</span> 新增/修改班次
+      </button>
+      <button class="nav-btn" onclick="exportCSV()">
+        <span class="nav-icon">💾</span> 匯出排班表
+      </button>
+    </div>
+  </aside>
+
+  <main class="content-area">
+    <div id="page-schedule" class="page active">
+      <div class="page-header">
+        <div>
+          <div class="page-title">月份排班表</div>
+          <div class="page-subtitle">點擊班次格可快速修改班別</div>
+        </div>
+        <button class="btn btn-primary" onclick="openModal()">＋ 新增班次</button>
+      </div>
+      <div class="stats-row">
+        <div class="stat-card rose">
+          <div class="stat-label">本月護理師人數</div>
+          <div class="stat-value">8</div>
+          <div class="stat-sub">第三外科病房</div>
+        </div>
+        <div class="stat-card peach">
+          <div class="stat-label">今日在班人數</div>
+          <div class="stat-value">5</div>
+          <div class="stat-sub">白班3 / 夜班2</div>
+        </div>
+        <div class="stat-card gold">
+          <div class="stat-label">本月假日申請</div>
+          <div class="stat-value">12</div>
+          <div class="stat-sub">已核准 9 筆</div>
+        </div>
+        <div class="stat-card teal">
+          <div class="stat-label">待審換班申請</div>
+          <div class="stat-value">3</div>
+          <div class="stat-sub">需盡快處理</div>
+        </div>
+      </div>
+      <div class="month-nav">
+        <button onclick="changeMonth(-1)">◀</button>
+        <span class="month-label" id="month-label"></span>
+        <button onclick="changeMonth(1)">▶</button>
+        <div style="margin-left:auto;">
+          <div class="legend">
+            <div class="legend-item"><div class="legend-dot shift-D">白</div> 白班 07:00-15:00</div>
+            <div class="legend-item"><div class="legend-dot shift-E">小</div> 小夜 15:00-23:00</div>
+            <div class="legend-item"><div class="legend-dot shift-N">大</div> 大夜 23:00-07:00</div>
+            <div class="legend-item"><div class="legend-dot shift-O">休</div> 休假</div>
+            <div class="legend-item"><div class="legend-dot shift-AL">假</div> 特休</div>
+          </div>
+        </div>
+      </div>
+      <div class="schedule-grid-wrapper scrollable-x">
+        <table class="schedule-table" id="schedule-table"></table>
+      </div>
+    </div>
+
+    <div id="page-requests" class="page">
+      <div class="page-header">
+        <div>
+          <div class="page-title">換班申請管理</div>
+          <div class="page-subtitle">審核護理師換班及休假申請</div>
+        </div>
+      </div>
+      <div class="request-list" id="request-list"></div>
+    </div>
+
+    <div id="page-summary" class="page">
+      <div class="page-header">
+        <div>
+          <div class="page-title">班次統計</div>
+          <div class="page-subtitle">本月各護理師出勤統計</div>
+        </div>
+      </div>
+      <div style="background:white;border-radius:12px;border:1.5px solid var(--warm-tan);overflow:hidden;box-shadow:0 2px 12px var(--shadow);">
+        <table class="summary-table" id="summary-table"></table>
+      </div>
+    </div>
+  </main>
+</div>
+
+<div class="modal-overlay" id="modal-overlay" onclick="closeModalOutside(event)">
+  <div class="modal">
+    <div class="modal-title">✏️ 修改班次</div>
+    <div class="form-group">
+      <label class="form-label">護理師</label>
+      <select class="form-select" id="modal-nurse"></select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">日期</label>
+      <input type="date" class="form-input" id="modal-date">
+    </div>
+    <div class="form-group">
+      <label class="form-label">班別</label>
+      <div class="shift-selector">
+        <div class="shift-opt D selected" onclick="selectShift('D')">白班</div>
+        <div class="shift-opt E" onclick="selectShift('E')">小夜</div>
+        <div class="shift-opt N" onclick="selectShift('N')">大夜</div>
+        <div class="shift-opt O" onclick="selectShift('O')">休假</div>
+        <div class="shift-opt AL" onclick="selectShift('AL')">特休</div>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeModal()">取消</button>
+      <button class="btn btn-primary" onclick="saveShift()">儲存</button>
+    </div>
+  </div>
+</div>
+
+
+<script>
+const NURSES = [
+  { id:1, name:'王小萍', role:'資深護理師', color:'#C0392B' },
+  { id:2, name:'林佳惠', role:'護理師',     color:'#E87A6A' },
+  { id:3, name:'陳美玲', role:'護理師',     color:'#D4855A' },
+  { id:4, name:'張雅婷', role:'護理師',     color:'#C97A60' },
+  { id:5, name:'李宜臻', role:'見習護理師', color:'#B8896E' },
+  { id:6, name:'黃怡君', role:'護理師',     color:'#A07A68' },
+  { id:7, name:'吳思穎', role:'資深護理師', color:'#8B5E52' },
+  { id:8, name:'劉欣妤', role:'護理師',     color:'#7A5050' },
+];
+
+const SHIFT_LABELS   = { D:'白', E:'小', N:'大', O:'休', AL:'假' };
+const LABEL_TO_SHIFT = { '白':'D', '小':'E', '大':'N', '休':'O', '假':'AL' };
+
+// ── Google Apps Script Web App 網址（部署後填入，會記憶到 localStorage）
+let GAS_URL = localStorage.getItem('gas_url') || 'https://script.google.com/macros/s/AKfycbxtbwMtjsdtdcWCkgw8Qo1EAdpbIIYwkqvmMw1ksVayo36B962oC063jvFQxZaWUmiRdw/exec';
+
+let currentYear   = new Date().getFullYear();
+let currentMonth  = new Date().getMonth();
+let selectedShift = 'D';
+let scheduleData  = {};
+let isSaving      = false;
+
+let requestsData = [
+  { id:0, name:'林佳惠', nurseId:2, avatar:'#E87A6A', date:'2026-03-18', newShift:'E',  detail:'申請 3/18（六）換班 → 小夜班', status:'pending'  },
+  { id:1, name:'陳美玲', nurseId:3, avatar:'#D4855A', date:'2026-03-22', newShift:'AL', detail:'申請 3/22（三）特休假',          status:'pending'  },
+  { id:2, name:'李宜臻', nurseId:5, avatar:'#B8896E', date:'2026-03-25', newShift:'D',  detail:'申請 3/25（六）換班 → 白班',    status:'pending'  },
+  { id:3, name:'張雅婷', nurseId:4, avatar:'#C97A60', date:'2026-03-10', newShift:'O',  detail:'申請 3/10（三）換班 → 休假',    status:'approved' },
+  { id:4, name:'黃怡君', nurseId:6, avatar:'#A07A68', date:'2026-03-05', newShift:'AL', detail:'申請 3/05（一）特休假',          status:'approved' },
+  { id:5, name:'吳思穎', nurseId:7, avatar:'#8B5E52', date:'2026-03-03', newShift:'D',  detail:'申請 3/03（六）換班申請',        status:'denied'   },
+];
+
+/* ════════════════════════════════════════
+   Toast
+════════════════════════════════════════ */
+function showToast(msg, duration) {
+  let t = document.getElementById('toast');
+  if (!t) {
+    t = document.createElement('div');
+    t.id = 'toast';
+    t.style.cssText = `position:fixed;bottom:24px;right:24px;z-index:300;
+      background:#3D2B1F;color:white;padding:10px 20px;border-radius:10px;
+      font-size:13px;font-family:inherit;opacity:0;transition:opacity 0.3s;
+      box-shadow:0 4px 16px rgba(0,0,0,0.2);pointer-events:none;max-width:340px;`;
+    document.body.appendChild(t);
+  }
+  t.textContent = msg;
+  t.style.opacity = '1';
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => { t.style.opacity = '0'; }, duration || 2800);
+}
+
+function setSaveIndicator(saving) {
+  let el = document.getElementById('save-indicator');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'save-indicator';
+    el.style.cssText = `position:fixed;top:80px;right:16px;z-index:200;
+      font-size:12px;padding:5px 12px;border-radius:20px;
+      font-family:inherit;transition:opacity 0.3s;`;
+    document.body.appendChild(el);
+  }
+  if (saving) {
+    el.textContent = '⏳ 儲存中…';
+    el.style.background = '#FEF5EF';
+    el.style.color = '#E65100';
+    el.style.opacity = '1';
+  } else {
+    el.textContent = '✅ 已同步';
+    el.style.background = '#EAF3DE';
+    el.style.color = '#3B6D11';
+    el.style.opacity = '1';
+    clearTimeout(el._t);
+    el._t = setTimeout(() => { el.style.opacity = '0'; }, 2000);
+  }
+}
+
+/* ════════════════════════════════════════
+   Google Sheets 整合（全部走 GET + URL 參數，繞開 CORS/POST 問題）
+════════════════════════════════════════ */
+
+/** 把 scheduleData 序列化為 payload */
+function buildPayload() {
+  const monthsSet = new Set();
+  Object.keys(scheduleData).forEach(k => {
+    const p = k.split('-');
+    monthsSet.add(`${p[1]}-${p[2]}`);
+  });
+  monthsSet.add(`${currentYear}-${currentMonth}`);
+
+  const months = [...monthsSet].sort().map(ym => {
+    const [y, m] = ym.split('-').map(Number);
+    const days   = new Date(y, m + 1, 0).getDate();
+    const nurses = {};
+    NURSES.forEach(nurse => {
+      nurses[nurse.name] = Array.from({length: days}, (_, i) => {
+        return SHIFT_LABELS[scheduleData[`${nurse.id}-${y}-${m}-${i + 1}`]] || '休';
+      });
+    });
+    return { year: y, month: m, nurses };
+  });
+  return { months };
+}
+
+// ========== JSONP 通用函式（支援 file:// 跨域存取） ==========
+function jsonp(params) {
+  return new Promise((resolve, reject) => {
+    const cbName = '_cb_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
+
+    const timer = setTimeout(() => {
+      cleanup();
+      reject(new Error('請求逾時，請檢查網路或 URL'));
+    }, 30000);
+
+    function cleanup() {
+      clearTimeout(timer);
+      delete window[cbName];
+      const el = document.getElementById(cbName);
+      if (el) el.parentNode.removeChild(el);
+    }
+
+    window[cbName] = function(data) {
+      cleanup();
+      resolve(data);
+    };
+
+    const qs = ['callback=' + cbName];
+    for (const key in params) {
+      if (params.hasOwnProperty(key)) {
+        qs.push(encodeURIComponent(key) + '=' + encodeURIComponent(params[key]));
+      }
+    }
+
+    const script = document.createElement('script');
+    script.id = cbName;
+    script.src = GAS_URL + '?' + qs.join('&');
+    script.onerror = function() {
+      cleanup();
+      reject(new Error('網路錯誤，請檢查 URL 是否正確'));
+    };
+    document.body.appendChild(script);
+  });
+}
+
+/** 寫回 Google Sheets（JSONP + ?action=write&data=JSON）*/
+async function saveToSheets() {
+  if (!GAS_URL) {
+    showToast('⚠️ 尚未設定 Apps Script 網址，請點右上角 ⚙ 設定', 4000);
+    return;
+  }
+  isSaving = true;
+  setSaveIndicator(true);
+  try {
+    const payload = buildPayload();
+    // 注意：不要先 encodeURIComponent，jsonp() 內部會統一處理
+    const json = await jsonp({ action: 'write', data: JSON.stringify(payload) });
+    if (json.ok) {
+      setSaveIndicator(false);
+      showToast('✅ 排班資料已儲存至 Google Sheets', 3000);
+    } else {
+      showToast('❌ 寫入失敗：' + (json.error || '未知錯誤'), 4000);
+      setSaveIndicator(false);
+    }
+  } catch (err) {
+    showToast('❌ 無法連線至 Google Sheets：' + err.message, 4000);
+    setSaveIndicator(false);
+  }
+  isSaving = false;
+}
+
+/** 從 Google Sheets 讀取（JSONP + ?action=read）
+ *  回傳: 'loaded' | 'empty' | 'error'
+ */
+async function loadFromSheets() {
+  if (!GAS_URL) return 'error';
+  try {
+    const json = await jsonp({ action: 'read' });
+    if (!json.ok) return 'error';
+    if (!json.data || !json.data.length) return 'empty';
+
+    json.data.forEach(blk => {
+      const { year, month, rows } = blk;
+      rows.forEach(row => {
+        const name  = row[0];
+        const nurse = NURSES.find(n => n.name === name);
+        if (!nurse) return;
+        for (let i = 1; i < row.length; i++) {
+          const shift = LABEL_TO_SHIFT[row[i]];
+          if (shift) scheduleData[`${nurse.id}-${year}-${month}-${i}`] = shift;
+        }
+      });
+    });
+    return 'loaded';
+  } catch (err) {
+    console.warn('讀取 Sheets 失敗', err);
+    return 'error';
+  }
+}
+
+/* ════════════════════════════════════════
+   設定 Modal（輸入 GAS 網址）
+════════════════════════════════════════ */
+function openSettings() {
+  let sm = document.getElementById('settings-modal');
+  if (!sm) {
+    sm = document.createElement('div');
+    sm.id = 'settings-modal';
+    sm.style.cssText = `position:fixed;inset:0;z-index:400;background:rgba(61,43,31,0.5);
+      display:flex;align-items:center;justify-content:center;`;
+    sm.innerHTML = `
+      <div style="background:white;border-radius:14px;padding:28px;width:520px;max-width:95vw;
+        box-shadow:0 8px 32px rgba(0,0,0,0.2);">
+        <div style="font-size:16px;font-weight:700;color:#3D2B1F;margin-bottom:6px;">⚙ Google Sheets 連線設定</div>
+        <div style="font-size:12px;color:#A07A68;margin-bottom:20px;line-height:1.7;">
+          請先完成 Apps Script 部署，再將 Web App 網址貼入下方。<br>
+          網址格式：<code style="font-size:11px;background:#f5f5f5;padding:2px 6px;border-radius:4px;">https://script.google.com/macros/s/…/exec</code>
+        </div>
+        <label style="font-size:12px;font-weight:600;color:#6B4F3F;display:block;margin-bottom:6px;">Apps Script Web App 網址</label>
+        <input id="gas-url-input" type="url" placeholder="https://script.google.com/macros/s/…/exec"
+          style="width:100%;padding:9px 12px;border-radius:8px;border:1.5px solid #E8DDD0;
+          font-family:inherit;font-size:13px;color:#3D2B1F;outline:none;box-sizing:border-box;"
+          value="${GAS_URL}">
+        <div style="display:flex;gap:10px;margin-top:20px;justify-content:flex-end;">
+          <button onclick="closeSettings()" style="padding:8px 18px;border-radius:8px;border:1.5px solid #E8DDD0;
+            background:white;cursor:pointer;font-family:inherit;font-size:13px;color:#6B4F3F;">取消</button>
+          <button onclick="saveSettings()" style="padding:8px 18px;border-radius:8px;border:none;
+            background:#C0392B;color:white;cursor:pointer;font-family:inherit;font-size:13px;font-weight:500;">
+            儲存並重新載入</button>
+        </div>
+      </div>`;
+    sm.addEventListener('click', e => { if (e.target === sm) closeSettings(); });
+    document.body.appendChild(sm);
+  }
+  document.getElementById('settings-modal').style.display = 'flex';
+  setTimeout(() => document.getElementById('gas-url-input').focus(), 50);
+}
+
+function closeSettings() {
+  const sm = document.getElementById('settings-modal');
+  if (sm) sm.style.display = 'none';
+}
+
+async function saveSettings() {
+  const val = document.getElementById('gas-url-input').value.trim();
+  if (!val.startsWith('https://script.google.com')) {
+    alert('請輸入有效的 Apps Script Web App 網址');
+    return;
+  }
+  GAS_URL = val;
+  localStorage.setItem('gas_url', GAS_URL);
+  closeSettings();
+  showToast('🔗 已儲存網址，正在從 Google Sheets 載入資料…', 4000);
+  await tryLoadSheets();
+}
+
+/* ════════════════════════════════════════
+   啟動流程
+════════════════════════════════════════ */
+async function tryLoadSheets() {
+  showLoadingOverlay(true);
+  const result = await loadFromSheets();   // 'loaded' | 'empty' | 'error'
+  showLoadingOverlay(false);
+
+  if (result === 'loaded') {
+    renderSchedule();
+    showToast('✅ 已從 Google Sheets 載入最新排班資料', 3500);
+  } else if (result === 'empty') {
+    initScheduleRandom();
+    renderSchedule();
+    showToast('📋 試算表目前是空的，已載入預設排班。儲存後即會寫入 Google Sheets', 4000);
+  } else {
+    initScheduleRandom();
+    renderSchedule();
+    if (GAS_URL) {
+      showToast('⚠️ 無法連線至試算表，請檢查網址或重新部署', 5000);
+    }
+  }
+}
+
+function showLoadingOverlay(show) {
+  let ov = document.getElementById('loading-overlay');
+  if (!ov && show) {
+    ov = document.createElement('div');
+    ov.id = 'loading-overlay';
+    ov.style.cssText = `position:fixed;inset:0;z-index:500;background:rgba(251,247,242,0.88);
+      display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;`;
+    ov.innerHTML = `
+      <div style="width:40px;height:40px;border:4px solid #E8DDD0;border-top-color:#C0392B;
+        border-radius:50%;animation:spin 0.8s linear infinite;"></div>
+      <div style="font-size:14px;color:#6B4F3F;">正在從 Google Sheets 載入排班資料…</div>
+      <style>@keyframes spin{to{transform:rotate(360deg)}}</style>`;
+    document.body.appendChild(ov);
+  } else if (ov) {
+    ov.style.display = show ? 'flex' : 'none';
+  }
+}
+
+function initScheduleRandom() {
+  NURSES.forEach(nurse => {
+    for (let d = 1; d <= 31; d++) {
+      const key = `${nurse.id}-${currentYear}-${currentMonth}-${d}`;
+      if (!scheduleData[key]) {
+        const r = Math.random();
+        if      (r < 0.35) scheduleData[key] = 'D';
+        else if (r < 0.55) scheduleData[key] = 'E';
+        else if (r < 0.70) scheduleData[key] = 'N';
+        else               scheduleData[key] = 'O';
+      }
+    }
+  });
+}
+
+/* ════════════════════════════════════════
+   渲染
+════════════════════════════════════════ */
+function renderNurseList() {
+  document.getElementById('nurse-list').innerHTML = NURSES.map(n => `
+    <div class="nurse-list-item">
+      <div class="nurse-avatar" style="background:${n.color}">${n.name[0]}</div>
+      <div>
+        <div class="nurse-name">${n.name}</div>
+        <div class="nurse-role">${n.role}</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function renderSchedule() {
+  const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+  const today = new Date();
+  const todayD = today.getDate();
+  const isCurrentMonth = today.getMonth() === currentMonth && today.getFullYear() === currentYear;
+
+  let html = '<thead><tr><th class="name-col">護理師</th>';
+  for (let d = 1; d <= daysInMonth; d++) {
+    const date  = new Date(currentYear, currentMonth, d);
+    const dow   = ['日','一','二','三','四','五','六'][date.getDay()];
+    const isWknd  = date.getDay() === 0 || date.getDay() === 6;
+    const isToday = isCurrentMonth && d === todayD;
+    html += `<th style="${isWknd ? 'color:#C0392B;' : ''} ${isToday ? 'background:#FDECEA;' : ''}">${d}<br>
+      <span style="font-weight:400;font-size:10px">${dow}</span></th>`;
+  }
+  html += '</tr></thead><tbody>';
+
+  NURSES.forEach(nurse => {
+    html += `<tr><td class="nurse-name-cell">
+      <div class="nurse-name-inner">
+        <div class="nurse-avatar" style="background:${nurse.color};width:24px;height:24px;font-size:11px">${nurse.name[0]}</div>
+        ${nurse.name}
+      </div></td>`;
+    for (let d = 1; d <= daysInMonth; d++) {
+      const key   = `${nurse.id}-${currentYear}-${currentMonth}-${d}`;
+      const shift = scheduleData[key] || 'O';
+      const isToday = isCurrentMonth && d === todayD;
+      html += `<td class="${isToday ? 'today-col' : ''}" onclick="quickEdit(${nurse.id},${d})">
+        <span class="shift-cell shift-${shift}">${SHIFT_LABELS[shift]}</span></td>`;
+    }
+    html += '</tr>';
+  });
+  html += '</tbody>';
+  document.getElementById('schedule-table').innerHTML = html;
+  document.getElementById('month-label').textContent = `${currentYear} 年 ${currentMonth + 1} 月`;
+}
+
+function renderRequests() {
+  const statusLabels = { pending:'待審核', approved:'已核准', denied:'已拒絕' };
+  const badgeClass   = { pending:'badge-pending', approved:'badge-approved', denied:'badge-denied' };
+  document.getElementById('request-list').innerHTML = requestsData.map((r, i) => `
+    <div class="request-card">
+      <div class="req-left">
+        <div class="nurse-avatar" style="background:${r.avatar}">${r.name[0]}</div>
+        <div>
+          <div class="req-name">${r.name}</div>
+          <div class="req-detail">${r.detail}</div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+        <span class="badge ${badgeClass[r.status]}">${statusLabels[r.status]}</span>
+        ${r.status === 'pending' ? `
+          <button class="btn btn-outline btn-sm" onclick="handleRequest(${i}, true)">核准</button>
+          <button class="btn btn-sm" style="background:var(--rose-pale);color:var(--rose);border:none;"
+            onclick="handleRequest(${i}, false)">拒絕</button>` : ''}
+      </div>
+    </div>
+  `).join('');
+}
+
+function handleRequest(idx, approve) {
+  const req = requestsData[idx];
+  req.status = approve ? 'approved' : 'denied';
+  if (approve && req.date && req.newShift && req.nurseId) {
+    const [y, m, d] = req.date.split('-').map(Number);
+    scheduleData[`${req.nurseId}-${y}-${m - 1}-${d}`] = req.newShift;
+    renderSchedule();
+    saveToSheets();
+    showToast(`✅ 已核准「${req.name}」申請，正在同步至 Google Sheets…`);
+  } else {
+    showToast(approve ? `✅ 已核准「${req.name}」申請` : `❌ 已拒絕「${req.name}」申請`);
+  }
+  renderRequests();
+}
+
+function renderSummary() {
+  const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+  let html = `<thead><tr>
+    <th>護理師</th><th>白班</th><th>小夜</th><th>大夜</th><th>休假</th><th>特休</th><th>總出勤</th>
+  </tr></thead><tbody>`;
+  NURSES.forEach(nurse => {
+    let counts = { D:0, E:0, N:0, O:0, AL:0 };
+    for (let d = 1; d <= daysInMonth; d++) {
+      const s = scheduleData[`${nurse.id}-${currentYear}-${currentMonth}-${d}`] || 'O';
+      counts[s]++;
+    }
+    const worked = counts.D + counts.E + counts.N;
+    html += `<tr>
+      <td><div style="display:flex;align-items:center;gap:8px">
+        <div class="nurse-avatar" style="background:${nurse.color};width:24px;height:24px;font-size:11px">${nurse.name[0]}</div>
+        ${nurse.name}</div></td>
+      <td><span class="shift-cell shift-D">${counts.D}</span></td>
+      <td><span class="shift-cell shift-E">${counts.E}</span></td>
+      <td><span class="shift-cell shift-N">${counts.N}</span></td>
+      <td><span class="shift-cell shift-O">${counts.O}</span></td>
+      <td><span class="shift-cell shift-AL">${counts.AL}</span></td>
+      <td style="font-weight:600;color:var(--rose)">${worked} 天</td>
+    </tr>`;
+  });
+  html += '</tbody>';
+  document.getElementById('summary-table').innerHTML = html;
+}
+
+/* ════════════════════════════════════════
+   導覽 / 月份
+════════════════════════════════════════ */
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+  document.getElementById('nav-' + name).classList.add('active');
+  if (name === 'summary')  renderSummary();
+  if (name === 'requests') renderRequests();
+}
+
+function changeMonth(delta) {
+  currentMonth += delta;
+  if (currentMonth > 11) { currentMonth = 0; currentYear++; }
+  if (currentMonth < 0)  { currentMonth = 11; currentYear--; }
+  initScheduleRandom();
+  renderSchedule();
+}
+
+/* ════════════════════════════════════════
+   Modal 班次編輯
+════════════════════════════════════════ */
+function quickEdit(nurseId, day) {
+  const sel = document.getElementById('modal-nurse');
+  sel.innerHTML = NURSES.map(n =>
+    `<option value="${n.id}" ${n.id === nurseId ? 'selected' : ''}>${n.name}</option>`).join('');
+  document.getElementById('modal-date').value =
+    `${currentYear}-${String(currentMonth + 1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+  selectShift(scheduleData[`${nurseId}-${currentYear}-${currentMonth}-${day}`] || 'D');
+  document.getElementById('modal-overlay').classList.add('open');
+}
+
+function openModal() {
+  document.getElementById('modal-nurse').innerHTML =
+    NURSES.map(n => `<option value="${n.id}">${n.name}</option>`).join('');
+  document.getElementById('modal-date').value = new Date().toISOString().slice(0, 10);
+  selectShift('D');
+  document.getElementById('modal-overlay').classList.add('open');
+}
+
+function closeModal()         { document.getElementById('modal-overlay').classList.remove('open'); }
+function closeModalOutside(e) { if (e.target === document.getElementById('modal-overlay')) closeModal(); }
+
+function selectShift(s) {
+  selectedShift = s;
+  document.querySelectorAll('.shift-opt').forEach(el =>
+    el.classList.toggle('selected', el.classList.contains(s)));
+}
+
+function saveShift() {
+  const nurseId = parseInt(document.getElementById('modal-nurse').value);
+  const dateVal = document.getElementById('modal-date').value;
+  if (!dateVal) { alert('請選擇日期'); return; }
+  const [y, m, d] = dateVal.split('-').map(Number);
+  scheduleData[`${nurseId}-${y}-${m - 1}-${d}`] = selectedShift;
+  closeModal();
+  renderSchedule();
+  saveToSheets();
+}
+
+function exportCSV() { saveToSheets(); showToast('🔄 正在同步至 Google Sheets…'); }
+
+/* ════════════════════════════════════════
+   時間顯示
+════════════════════════════════════════ */
+function updateDatetime() {
+  document.getElementById('current-datetime').textContent =
+    new Date().toLocaleString('zh-TW', {
+      year:'numeric', month:'2-digit', day:'2-digit',
+      hour:'2-digit', minute:'2-digit', weekday:'short'
+    });
+}
+
+/* ════════════════════════════════════════
+   啟動
+════════════════════════════════════════ */
+renderNurseList();
+updateDatetime();
+setInterval(updateDatetime, 60000);
+tryLoadSheets();
+
+</script>
+</body>
+</html>
